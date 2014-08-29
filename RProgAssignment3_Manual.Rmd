@@ -1,0 +1,211 @@
+---
+title: "RProgAssingment3"
+author: "Thomas J. Keller, PhD"
+date: "August 27, 2014"
+output: html_document
+---
+
+This is the documentation for August 2014 Coursera course 'RProgramming', assingment 3.
+
+## Data source notes   
+* Original data at http://hospitalcompare.hhs.gov 
+* Data apparently from 12 months prior to July 2012  
+* Subsets extracted by Coursera 'R Programming' staff, August 2014  
+** https://d396qusza40orc.cloudfront.net/rprog%2Fdata%2FProgAssignment3-data.zip  
+```{r}
+dir("Assignment3-data/")
+```
+
+* The 'Hospital_Revised_Flatfiles.pdf' is the 'code book' for the csv data files.   
+* outcome-of-care-measures.csv contains 30-ay mortality and readmission rates for  
+** 'Heart.Attack', 'Heart.Failure' and 'Pneumonia'  
+* "hospital-data.csv" contains information about the hospitals included in the study
+
+### Background to data  
+* including to determine whether hospitals should be fined for the quality of care  
+* http://goo.gl/JAXFX  
+
+## Focus of Assigment
+* variables for 'Table 19' ("outcome-of-care-measures.csv")  
+* variables for 'Table 11' ("hospital-data.csv")  
+
+### Data exploration  
+* number of columns  
+* number of rows  
+* sample the relevant data (columns: 11, 17, 23)  
+```{r echo=FALSE}
+outcome <- read.csv("Assignment3-data/outcome-of-care-measures.csv", colClasses="character")
+ncol(outcome)
+nrow(outcome)
+colnames(outcome)
+# the columns of interest are 2, 7, 11, 17 and 23 for respectively:
+## Hospital.Name, State, Heart.Attack mortality, Heart.Failur mortality and Pneumonia mortality
+outcome[1:20,c(2, 7, 11,17,23)]
+```
+
+#### Replace 'Not Available' values with NA
+```{r}
+## re-read the csv file, replacing 'Not Available' with NA
+outcome <- read.csv("Assignment3-data/outcome-of-care-measures.csv", na.strings = "Not Available")
+outcome[1:20,c(2, 7, 11,17,23)]
+```
+
+### subset the columns of interest, and rename columns for convenience  
+```{r}
+mortality <- outcome[, c(2, 7, 11,17,23)]
+colnames(mortality) <- c("hospital", "state", "heart attack","heart failure","pneumonia")
+str(mortality)
+```
+
+
+* histogram of '30-day death rates'  
+```{r echo=FALSE}
+hist(as.numeric(outcome[,11]), main="30-day Death Rate for All Hospitals")
+hist(as.numeric(mortality$heart_attack))
+```
+
+
+## Finding the best hospital in a state
+```{r}
+best <- function(state, outcome) {
+      ## read outcome data in downloaded csv file
+      
+      ## check that 'state' and 'outcome' arguments are valid; stop() and
+      ### return "invalid state", or "invalid outcome" for bad input,
+      ### "missing argment" if missing
+      
+      ## return hospital in 'state' with lowest 30-day death rate (mortality)
+      ### example best("TX", "heart attack") returns [1] "CYPRESS FAIRBANKS..."
+      ### hospital names should be sorted alphabetically, return the first for ties
+      
+}
+```
+
+## Ranking hospitals by outcome in a state  
+```{r}
+rankhospital <- function(state, outcome, num = "best") {
+      ## read outcome data in downloaded csv file
+      
+      ## check that 'state' and 'outcome' arguments are valid; stop() and
+      ### return "invalid state", or "invalid outcome" for bad input,
+      ### "missing argment" if missing argument)
+      ### "best" is rank 1, "worst" is the largest number for rank for the state
+     
+      
+      ## return hospital in 'state' with that rank for 30-day death rate (mortality)
+      ### a num (rank) that is greater than the largest number for rank should return NA
+      
+}
+```
+
+## Ranking hospitals in all states
+```{r}
+rankall <- function(outcome, num = "best") {
+      ## read outcome data in downloaded csv file
+      
+      ## check the 'outcome' arguments is valid; stop() and
+      ### return "invalid outcome" for bad input,
+      ### "missing argment" if missing argument)
+      ### "best" is rank 1, "worst" is the largest number for rank for the state
+      
+      ## for each state, find the hospital of the given rank
+      ### NA if no hospital for a state has that rank
+      
+      ## return a data.frame with 2 columns: the hospital names and state (Abreciation)
+      ### exclude states with NA for the rank
+      
+      
+}
+```
+
+### functional units
+* read outcome and subset relevant columns, replace 'Not Available' with NA
+* check arguments
+** 'state' must be a member of the mortality$state list of unique values
+** check 'outcome' arg is c("heart attack", "heart failure", "pneumonia")  
+```{r}
+states <- as.character(unique(mortality$state))
+diseases <- c("heart attack", "heart failure", "pneumonia")
+check <- function(state, outcome) {
+ if(missing(state)) stop("missing argument")
+ if(missing(outcome)) stop("missing argument")
+ ## allow variations in case
+ state = toupper(state)
+ outcome = tolower(outcome)
+ if(is.na(states[match(state,states)])) stop("invalid state")
+ if(is.na(diseases[match(outcome,diseases)])) stop("invalid outcome")
+ args <- paste(outcome,state, sep= " in ")
+ return(args)
+}
+
+```
+
+* subset by state
+* best outcome  
+** be sure to include validation in the final function  
+```{r}
+stateoutcome <- function(state, outcome) {
+      ## fix outcome names
+      disease <- sub("\\s+","_",outcome)          
+      ## fix column names
+      colnames(mortality) <- c("hospital", "state", "heart_attack","heart_failure","pneumonia")
+      mystate.df <- mortality[mortality$state == state,]
+      stateorder <- order(mystate.df[,which(names(mystate.df) == disease)],mystate.df[,1])
+      besthospital <- as.character(mystate.df[stateorder[1],1])
+      return(besthospital)
+}
+```
+
+* subset by state
+* rank the outcome  
+** be sure to include validation in the final function  
+```{r}
+rankhospital <- function(state, outcome, num = "best"){
+      ## validate arguments
+       if(missing(num)) stop("missing argument")
+      ## fix outcome names
+      disease <- sub("\\s+","_",outcome)   
+      ## fix column names
+      colnames(mortality) <- c("hospital", "state", "heart_attack","heart_failure","pneumonia")
+      mystate.df <- mortality[mortality$state == state, c(1,which(names(mortality) == disease))]
+      stateorder <- order(mystate.df[,which(names(mystate.df) == disease)],mystate.df[,1], na.last = T)
+      ## recode "best" to 1 and "wworst" to length(stateorder)
+      num <- ifelse(num == "best", 1, num)
+      num <- ifelse(num == "worst", length(stateorder), num)
+      num <- as.numeric(num)
+      if(is.na(num)) stop("invalid num")
+      ## order by outcome and hospital name
+      mystate.df <- mystate.df[stateorder[num],c(1,which(names(mystate.df) == disease))]
+      return(mystate.df)
+}
+```
+
+* apply to all states
+* rank outcome and order by outcome and hospital name
+** return hospital name and state
+```{r}
+rankall <- function(outcome, num = "best") {
+      states <- as.character(unique(mortality$state))
+      
+      myfun <- function(state, outcome, num = "best"){
+      ## validate arguments
+       if(missing(num)) stop("missing argument")
+      ## fix outcome names
+      disease <- sub("\\s+","_",outcome)   
+      ## fix column names
+      colnames(mortality) <- c("hospital", "state", "heart_attack","heart_failure","pneumonia")
+      mystate.df <- mortality[mortality$state == state, c(1,which(names(mortality) == disease))]
+      stateorder <- order(mystate.df[,which(names(mystate.df) == disease)],mystate.df[,1], na.last = T)
+      ## recode "best" to 1 and "wworst" to length(stateorder)
+      num <- ifelse(num == "best", 1, num)
+      num <- ifelse(num == "worst", length(stateorder), num)
+      num <- as.numeric(num)
+      if(is.na(num)) stop("invalid num")
+      ## order by outcome and hospital name
+      mystate.df <- mystate.df[stateorder[num],c(1,which(names(mystate.df) == disease))]
+      }
+      rowbind(output) <- lapply(seq_along(states),myfun)
+      return(output)
+}
+```
+
